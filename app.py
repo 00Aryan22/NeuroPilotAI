@@ -84,59 +84,14 @@ def _is_generic_pdf_question(question: str) -> bool:
     ]
     return any(re.match(pattern, normalized) for pattern in generic_patterns)
 
-
-def _apply_manual_theme(mode: str) -> None:
-    if mode == "Auto":
-        return
-    if mode == "Light":
-        st.markdown(
-            """
-            <style>
-                html, body, [data-testid="stAppViewContainer"] {
-                    background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.08), transparent 30%),
-                                radial-gradient(circle at bottom left, rgba(0, 212, 255, 0.10), transparent 35%),
-                                linear-gradient(135deg, #f4f7ff, #edf3ff, #e9f0ff) !important;
-                    color: #0f172a !important;
-                }
-                [data-testid="stSidebar"] {
-                    background: rgba(255, 255, 255, 0.82) !important;
-                    border-right: 1px solid rgba(37, 99, 235, 0.18) !important;
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-        return
-
-    st.markdown(
-        """
-        <style>
-            html, body, [data-testid="stAppViewContainer"] {
-                background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.18), transparent 30%),
-                            radial-gradient(circle at bottom left, rgba(0, 212, 255, 0.22), transparent 35%),
-                            linear-gradient(135deg, #050816, #0b1120, #111827) !important;
-                color: #e5e7eb !important;
-            }
-            [data-testid="stSidebar"] {
-                background: rgba(8, 12, 28, 0.8) !important;
-                border-right: 1px solid rgba(103, 232, 249, 0.2) !important;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
 with st.sidebar:
     st.markdown("## NeuroPilot AI")
     st.markdown('<span class="status-pill">System Online</span>', unsafe_allow_html=True)
-    theme_mode = st.selectbox("Theme Mode", ["Auto", "Light", "Dark"], index=0)
     menu = st.radio(
         "Navigation",
         ["Dashboard", "Research Agent", "PDF RAG Chat", "GitHub Analyzer", "Autonomous Workflow", "Reports & PPT", "Analytics"],
     )
     st.caption(f"Session: `{st.session_state.session_id}`")
-
-_apply_manual_theme(theme_mode)
 
 st.markdown(
     """
