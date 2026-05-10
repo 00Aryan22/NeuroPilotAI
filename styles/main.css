@@ -7,6 +7,14 @@
   --neon-blue: #00d4ff;
   --neon-cyan: #67e8f9;
   --neon-purple: #a855f7;
+  --text-color: #e5e7eb;
+  --sidebar-bg: rgba(8, 12, 28, 0.8);
+  --sidebar-border: rgba(103, 232, 249, 0.2);
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-title: #a5b4fc;
+  --card-value: #f8fafc;
+  --card-subtitle: #94a3b8;
+  --section-caption: #9ca3af;
 }
 
 html, body, [data-testid="stAppViewContainer"] {
@@ -14,17 +22,32 @@ html, body, [data-testid="stAppViewContainer"] {
   background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.18), transparent 30%),
               radial-gradient(circle at bottom left, rgba(0, 212, 255, 0.22), transparent 35%),
               linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
-  color: #e5e7eb;
+  color: var(--text-color);
+}
+
+/* Respect Streamlit theme toggle */
+html[data-theme="light"] {
+  --bg-1: #f4f7ff;
+  --bg-2: #edf3ff;
+  --bg-3: #e9f0ff;
+  --text-color: #0f172a;
+  --sidebar-bg: rgba(255, 255, 255, 0.82);
+  --sidebar-border: rgba(37, 99, 235, 0.18);
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --card-title: #334155;
+  --card-value: #0f172a;
+  --card-subtitle: #475569;
+  --section-caption: #475569;
 }
 
 [data-testid="stSidebar"] {
-  background: rgba(8, 12, 28, 0.8);
+  background: var(--sidebar-bg);
   backdrop-filter: blur(10px);
-  border-right: 1px solid rgba(103, 232, 249, 0.2);
+  border-right: 1px solid var(--sidebar-border);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--card-bg);
   border: 1px solid rgba(103, 232, 249, 0.22);
   border-radius: 16px;
   padding: 14px 16px;
@@ -39,7 +62,7 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 
 .card-title {
-  color: #a5b4fc;
+  color: var(--card-title);
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 8px;
@@ -48,12 +71,12 @@ html, body, [data-testid="stAppViewContainer"] {
 .card-value {
   font-size: 1.7rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: var(--card-value);
 }
 
 .card-subtitle {
   margin-top: 4px;
-  color: #94a3b8;
+  color: var(--card-subtitle);
   font-size: 0.78rem;
 }
 
@@ -68,7 +91,7 @@ html, body, [data-testid="stAppViewContainer"] {
 
 .section-wrap p {
   margin: 4px 0 12px 0;
-  color: #9ca3af;
+  color: var(--section-caption);
 }
 
 .hero {
