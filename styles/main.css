@@ -25,8 +25,12 @@ html, body, [data-testid="stAppViewContainer"] {
   color: var(--text-color);
 }
 
-/* Respect Streamlit theme toggle */
-html[data-theme="light"] {
+/* Respect Streamlit theme toggle across Streamlit versions/selectors */
+html[data-theme="light"],
+body[data-theme="light"],
+[data-theme="light"],
+[data-testid="stAppViewContainer"][data-theme="light"],
+.stApp[data-theme="light"] {
   --bg-1: #f4f7ff;
   --bg-2: #edf3ff;
   --bg-3: #e9f0ff;
@@ -92,6 +96,23 @@ html[data-theme="light"] {
 .section-wrap p {
   margin: 4px 0 12px 0;
   color: var(--section-caption);
+}
+
+/* Hard fallback for light mode if CSS variables are not propagated by container */
+html[data-theme="light"] [data-testid="stAppViewContainer"],
+body[data-theme="light"] [data-testid="stAppViewContainer"],
+[data-theme="light"] [data-testid="stAppViewContainer"] {
+  background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.08), transparent 30%),
+              radial-gradient(circle at bottom left, rgba(0, 212, 255, 0.10), transparent 35%),
+              linear-gradient(135deg, #f4f7ff, #edf3ff, #e9f0ff) !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] [data-testid="stSidebar"],
+body[data-theme="light"] [data-testid="stSidebar"],
+[data-theme="light"] [data-testid="stSidebar"] {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-right: 1px solid rgba(37, 99, 235, 0.18) !important;
 }
 
 .hero {
