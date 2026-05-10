@@ -9,6 +9,7 @@ from utils.config import get_secret
 load_dotenv()
 
 MODEL_NAME = get_secret("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+ENABLE_CREWAI = str(get_secret("ENABLE_CREWAI", "false")).lower() in {"1", "true", "yes", "on"}
 SYSTEM_PROMPT = (
     "You are NeuroPilot AI, an enterprise-grade autonomous assistant. "
     "Be concise, accurate, and provide structured outputs with actionability."
@@ -100,15 +101,20 @@ def answer_pdf_question(question: str, context: str) -> str:
 
 def run_multi_agent_workflow(goal: str, research_summary: str = "", github_summary: str = "", pdf_summary: str = "") -> str:
     """
-    CrewAI-backed orchestration with safe fallback for low-resource machines.
+    Workflow orchestration with optional CrewAI mode.
     """
+    prompt = (
+        f"Goal: {goal}\n\nResearch:\n{research_summary}\n\nGitHub:\n{github_summary}\n\nPDF:\n{pdf_summary}\n\n"
+        "Generate an autonomous execution plan with priorities, timeline, and risks."
+    )
+
+    # Cloud deployments are more reliable in direct LLM mode unless CrewAI is explicitly enabled.
+    if not ENABLE_CREWAI:
+        return ask_ai(prompt)
+
     try:
         from crewai import Agent, Crew, Task
     except Exception:
-        prompt = (
-            f"Goal: {goal}\n\nResearch:\n{research_summary}\n\nGitHub:\n{github_summary}\n\nPDF:\n{pdf_summary}\n\n"
-            "Generate an autonomous execution plan with priorities, timeline, and risks."
-        )
         return ask_ai(prompt)
 
     try:
@@ -140,4 +146,7 @@ def run_multi_agent_workflow(goal: str, research_summary: str = "", github_summa
         crew = Crew(agents=[researcher, architect, operator], tasks=tasks, verbose=False)
         return str(crew.kickoff())
     except Exception as exc:
-        return f"Crew workflow failed, fallback used.\n\n{ask_ai(f'Create an autonomous workflow plan for: {goal}. Error: {exc}')}"
+        return ask_ai(
+            f"{prompt}\n\nCrewAI execution error for reference: {exc}\n"
+            "Continue and produce the best final execution plan anyway."
+        )
