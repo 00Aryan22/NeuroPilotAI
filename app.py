@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+import re
 from uuid import uuid4
 
 import streamlit as st
@@ -36,6 +37,7 @@ def init_state() -> None:
         "last_research_summary": "",
         "last_github_summary": "",
         "last_pdf_summary": "",
+        "last_pdf_text": "",
         "last_report_path": "",
         "last_ppt_path": "",
     }
@@ -51,6 +53,36 @@ def get_vector_manager() -> VectorStoreManager:
 
 init_state()
 vector_manager = get_vector_manager()
+
+
+def _keyword_fallback_context(text: str, question: str, max_chunks: int = 4, chunk_size: int = 1200) -> str:
+    if not text.strip():
+        return ""
+    words = {w for w in re.findall(r"[a-zA-Z0-9]+", question.lower()) if len(w) > 2}
+    chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+    if not words:
+        return "\n\n".join(chunks[:max_chunks])
+
+    scored = []
+    for chunk in chunks:
+        lower = chunk.lower()
+        score = sum(1 for w in words if w in lower)
+        if score > 0:
+            scored.append((score, chunk))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    best = [c for _, c in scored[:max_chunks]]
+    return "\n\n".join(best) if best else "\n\n".join(chunks[:max_chunks])
+
+
+def _is_generic_pdf_question(question: str) -> bool:
+    normalized = re.sub(r"\s+", " ", question.lower()).strip()
+    generic_patterns = [
+        r"^what\s+is\s+in\s+(this\s+)?pdf\??$",
+        r"^explain\s+(this\s+)?pdf\??$",
+        r"^summari[sz]e\s+(this\s+)?pdf\??$",
+        r"^what\s+is\s+this\s+document\s+about\??$",
+    ]
+    return any(re.match(pattern, normalized) for pattern in generic_patterns)
 
 with st.sidebar:
     st.markdown("## NeuroPilot AI")
@@ -135,22 +167,68 @@ elif menu == "PDF RAG Chat":
         with st.spinner("Parsing and indexing PDF..."):
             file_path = save_uploaded_pdf(uploaded)
             text = extract_text(file_path)
-            vector_manager.build_pdf_store(st.session_state.session_id, text)
-            st.session_state.pdf_loaded = True
+            st.session_state.last_pdf_text = text
             st.session_state.last_pdf_name = uploaded.name
-            st.session_state.last_pdf_summary = ask_ai(f"Summarize this document in 8 bullets:\n{text[:10000]}")
-            st.session_state.agent_status["PDF Agent"] = "Ready"
-        st.success(f"Indexed: {uploaded.name}")
+            st.session_state.pdf_chat_history = []
+
+            if not text.strip():
+                st.session_state.pdf_loaded = False
+                st.session_state.last_pdf_summary = ""
+                st.session_state.agent_status["PDF Agent"] = "Failed"
+                st.error(
+                    "No readable text was extracted from this PDF. "
+                    "It may be image/scanned-only; try a searchable PDF or run OCR first."
+                )
+            else:
+                try:
+                    vector_manager.build_pdf_store(st.session_state.session_id, text)
+                except Exception as exc:
+                    # Keep chat usable via raw-text fallback even if embeddings/vector store fails.
+                    st.warning(f"Vector indexing unavailable, using direct text mode: {exc}")
+                st.session_state.pdf_loaded = True
+                st.session_state.last_pdf_summary = ask_ai(f"Summarize this document in 8 bullets:\n{text[:10000]}")
+                st.session_state.agent_status["PDF Agent"] = "Ready"
+                st.success(f"Indexed: {uploaded.name}")
 
     if st.session_state.pdf_loaded:
         st.caption(f"Active file: `{st.session_state.last_pdf_name}`")
+        with st.expander("PDF extraction details", expanded=False):
+            extracted_chars = len(st.session_state.last_pdf_text or "")
+            st.write(f"Extracted characters: **{extracted_chars}**")
+            if extracted_chars:
+                st.text_area(
+                    "Extracted preview",
+                    value=st.session_state.last_pdf_text[:1200],
+                    height=160,
+                    disabled=True,
+                )
         question = st.text_input("Ask from PDF knowledge base")
         if st.button("Ask NeuroPilot PDF", use_container_width=True) and question.strip():
             with st.spinner("Retrieving relevant chunks..."):
-                db = vector_manager.load_pdf_store(st.session_state.session_id)
-                docs = db.similarity_search(question, k=4)
-                context = "\n\n".join(d.page_content for d in docs)
-                answer = answer_pdf_question(question, context)
+                context = ""
+                try:
+                    db = vector_manager.load_pdf_store(st.session_state.session_id)
+                    docs = db.similarity_search(question, k=4)
+                    context = "\n\n".join(d.page_content for d in docs if d.page_content and d.page_content.strip())
+                except Exception:
+                    context = ""
+                if not context.strip():
+                    # Fallback if retrieval is weak or vector store is unavailable.
+                    context = _keyword_fallback_context(st.session_state.last_pdf_text, question)
+
+                if context.strip():
+                    if _is_generic_pdf_question(question):
+                        answer = ask_ai(
+                            "Summarize this document context in 6 concise bullet points and a 1-line conclusion:\n\n"
+                            f"{context[:12000]}"
+                        )
+                    else:
+                        answer = answer_pdf_question(question, context)
+                else:
+                    answer = (
+                        "I could not extract readable text from the uploaded document. "
+                        "Please upload a searchable PDF or run OCR and try again."
+                    )
                 st.session_state.pdf_chat_history.append({"question": question, "answer": answer, "time": datetime.now().isoformat()})
         for chat in st.session_state.pdf_chat_history[-5:][::-1]:
             st.markdown(f"**Q:** {chat['question']}")
