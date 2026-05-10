@@ -1,0 +1,7 @@
+.env
+.venv/
+uploads/
+reports/
+presentations/
+__pycache__/
+vector_db/
