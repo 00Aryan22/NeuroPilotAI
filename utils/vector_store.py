@@ -11,6 +11,8 @@ except ImportError:
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
+from utils.config import get_secret
+
 load_dotenv()
 
 
@@ -22,8 +24,8 @@ class VectorStoreManager:
         self.persist_root.mkdir(parents=True, exist_ok=True)
         self.embedding = OpenAIEmbeddings(
             model="text-embedding-3-small",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url="https://openrouter.ai/api/v1",
+            api_key=get_secret("OPENROUTER_API_KEY"),
+            base_url=get_secret("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         )
 
     @staticmethod

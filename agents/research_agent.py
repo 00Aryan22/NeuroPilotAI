@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 from tavily import TavilyClient
 
 from agents.ai_agent import summarize_research
+from utils.config import get_secret
 
 load_dotenv()
 
-tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+tavily_client = TavilyClient(api_key=get_secret("TAVILY_API_KEY"))
 
 
 def web_research(query: str, max_results: int = 6) -> Dict[str, Any]:
@@ -34,7 +35,7 @@ def web_research(query: str, max_results: int = 6) -> Dict[str, Any]:
 
 
 def scrape_with_apify(url: str) -> List[Dict[str, Any]]:
-    token = os.getenv("APIFY_API_TOKEN")
+    token = get_secret("APIFY_API_TOKEN")
     if not token:
         return [{"error": "APIFY_API_TOKEN is not configured."}]
     try:

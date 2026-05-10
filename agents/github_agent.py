@@ -6,12 +6,13 @@ import requests
 from dotenv import load_dotenv
 
 from agents.ai_agent import analyze_github_repo
+from utils.config import get_secret
 
 load_dotenv()
 
 
 def _headers() -> Dict[str, str]:
-    token = os.getenv("GITHUB_TOKEN")
+    token = get_secret("GITHUB_TOKEN")
     headers = {"Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"

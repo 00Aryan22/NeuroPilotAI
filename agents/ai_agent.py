@@ -4,17 +4,19 @@ from typing import Dict, List
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from utils.config import get_secret
+
 load_dotenv()
 
-MODEL_NAME = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+MODEL_NAME = get_secret("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
 SYSTEM_PROMPT = (
     "You are NeuroPilot AI, an enterprise-grade autonomous assistant. "
     "Be concise, accurate, and provide structured outputs with actionability."
 )
 
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+    api_key=get_secret("OPENROUTER_API_KEY"),
+    base_url=get_secret("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
 )
 
 
